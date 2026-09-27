@@ -1,0 +1,9 @@
+{
+  "name": "Sound Sorter for Spotify",
+  "short_name": "Sound Sorter",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b0b0f",
+  "theme_color": "#101014",
+  "description": "Sort Spotify playlists by song-level sound similarity using Last.fm tags."
+}

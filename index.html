@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101014" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Sound Sorter for Spotify</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">SPOTIFY PLAYLIST ORGANIZER</p>
+        <h1>Sound Sorter</h1>
+        <p class="lede">Sort by what a song actually sounds like—not broad “pop” labels.</p>
+      </div>
+      <button id="settingsBtn" class="icon-btn" aria-label="Settings">⚙︎</button>
+    </header>
+
+    <section class="card" id="connectCard">
+      <div class="row-between">
+        <div>
+          <h2>1. Connect</h2>
+          <p id="connectionText" class="muted">Add your API keys in Settings, then connect Spotify.</p>
+        </div>
+        <button id="connectBtn" class="primary">Connect Spotify</button>
+      </div>
+      <div id="profile" class="profile hidden"></div>
+    </section>
+
+    <section class="card disabled-section" id="playlistCard">
+      <h2>2. Pick a playlist</h2>
+      <label>
+        Spotify playlist
+        <select id="playlistSelect">
+          <option value="">Connect Spotify first</option>
+        </select>
+      </label>
+      <p class="hint">Spotify's current API only exposes items for playlists you own or collaborate on.</p>
+    </section>
+
+    <section class="card disabled-section" id="soundCard">
+      <h2>3. Define the sound</h2>
+
+      <div class="preset-grid">
+        <button class="preset active" data-preset="slayyyter">
+          <strong>Slayyyter</strong>
+          <span>hyperpop · electroclash · club pop</span>
+        </button>
+        <button class="preset" data-preset="purepop">
+          <strong>Pure Pop</strong>
+          <span>bright pop · no rap · no K-pop</span>
+        </button>
+        <button class="preset" data-preset="girlypop">
+          <strong>Girly Pop</strong>
+          <span>glossy · playful · dance-pop</span>
+        </button>
+        <button class="preset" data-preset="darkpop">
+          <strong>Dark Pop</strong>
+          <span>moody · synthy · dramatic</span>
+        </button>
+        <button class="preset" data-preset="clubpop">
+          <strong>Club / Party</strong>
+          <span>dance · electro · high-energy</span>
+        </button>
+        <button class="preset" data-preset="2000spop">
+          <strong>2000s Pop</strong>
+          <span>Y2K · dance-pop · teen pop</span>
+        </button>
+        <button class="preset" data-preset="poppunk">
+          <strong>Pop-Punk</strong>
+          <span>pop-punk · power pop · alt rock</span>
+        </button>
+        <button class="preset" data-preset="custom">
+          <strong>Sounds Like…</strong>
+          <span>use any seed artist</span>
+        </button>
+      </div>
+
+      <label>
+        Sounds like
+        <input id="seedArtist" type="text" value="Slayyyter" autocomplete="off" />
+      </label>
+      <p class="hint" id="presetHint">Preset tags + seed-artist similarity are combined. Generic “pop” has very little weight.</p>
+
+      <label>
+        Hard exclusions
+        <input id="exclusions" type="text" value="rap, hip hop, k-pop, kpop, korean pop" />
+      </label>
+      <p class="hint">If a track itself has one of these Last.fm tags, it is excluded even if it is also tagged “pop.”</p>
+
+      <details>
+        <summary>Advanced match tags</summary>
+        <label>
+          Strong positive tags
+          <textarea id="positiveTags" rows="4">hyperpop:38, electroclash:38, electropop:34, electro pop:34, club pop:34, bubblegum bass:30, glitch pop:25, dance pop:22, synthpop:20, synth pop:20, experimental pop:18, alternative pop:15, alt pop:15, dark pop:15, electronic:8, dance:8, pop:2</textarea>
+        </label>
+      </details>
+
+      <button id="analyzeBtn" class="primary wide">Analyze playlist</button>
+    </section>
+
+    <section class="card hidden" id="progressCard">
+      <h2>Analyzing</h2>
+      <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+      <p id="progressText" class="muted">Starting…</p>
+    </section>
+
+    <section class="card hidden" id="resultsCard">
+      <div class="row-between">
+        <div>
+          <h2>4. Preview</h2>
+          <p id="summaryText" class="muted"></p>
+        </div>
+        <select id="bucketFilter" class="compact-select">
+          <option value="all">All</option>
+          <option value="strong">Very close</option>
+          <option value="similar">Similar</option>
+          <option value="adjacent">Adjacent</option>
+          <option value="weak">Weak</option>
+          <option value="excluded">Excluded</option>
+        </select>
+      </div>
+
+      <div class="legend">
+        <span><i class="dot strong"></i> Very close</span>
+        <span><i class="dot similar"></i> Similar</span>
+        <span><i class="dot adjacent"></i> Adjacent</span>
+        <span><i class="dot weak"></i> Weak</span>
+        <span><i class="dot excluded"></i> Excluded</span>
+      </div>
+
+      <div id="resultsList" class="results"></div>
+
+      <div class="actions">
+        <label>
+          Minimum match for filtered playlist
+          <select id="minimumBucket">
+            <option value="strong">Very close only</option>
+            <option value="similar" selected>Similar + very close</option>
+            <option value="adjacent">Adjacent + similar + very close</option>
+          </select>
+        </label>
+
+        <label>
+          New playlist name
+          <input id="newPlaylistName" type="text" value="Slayyyter-ish" />
+        </label>
+
+        <button id="createFilteredBtn" class="primary wide">Create filtered playlist</button>
+        <button id="createSortedBtn" class="secondary wide">Create sorted copy of everything</button>
+
+        <details class="danger-zone">
+          <summary>Replace original playlist order</summary>
+          <p>This rewrites the selected playlist using the preview order. It does not delete tracks, but it changes their order.</p>
+          <button id="replaceOriginalBtn" class="danger wide">Replace original order</button>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="dialog-card">
+      <div class="row-between">
+        <h2>Settings</h2>
+        <button class="icon-btn" value="cancel" aria-label="Close">✕</button>
+      </div>
+      <p class="muted">Keys stay only in this browser's local storage. Never enter a Spotify client secret.</p>
+
+      <label>
+        Spotify Client ID
+        <input id="spotifyClientId" type="text" autocapitalize="off" autocomplete="off" />
+      </label>
+
+      <label>
+        Last.fm API key
+        <input id="lastfmApiKey" type="text" autocapitalize="off" autocomplete="off" />
+      </label>
+
+      <label>
+        Redirect URI
+        <input id="redirectUri" type="url" autocapitalize="off" autocomplete="off" />
+      </label>
+      <p class="hint">This exact URI must also be added to your Spotify Developer app's Redirect URIs.</p>
+
+      <button id="saveSettingsBtn" type="button" class="primary wide">Save settings</button>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
